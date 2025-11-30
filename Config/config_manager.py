@@ -1,5 +1,5 @@
 """
-Gestor de configuración del sistema
+Gestor de configuración del sistema - MEJORADO
 """
 
 import json
@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ConfigManager:
-    """Manejador de configuración del sistema"""
+    """Manejador de configuración del sistema - CORREGIDO"""
     
     def __init__(self, config_file="config.json"):
         self.config_file = config_file
@@ -32,7 +32,8 @@ class ConfigManager:
             "ui": {
                 "tema": "default",
                 "mostrar_tooltips": True,
-                "animaciones": True
+                "animaciones": True,
+                "usar_fondos": True  # NUEVO: control para fondos
             },
             "system": {
                 "version": "2.0.0",
@@ -42,28 +43,44 @@ class ConfigManager:
         self.load_config()
     
     def load_config(self):
-        """Carga la configuración desde archivo"""
+        """Carga la configuración desde archivo - MEJORADO"""
         try:
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r', encoding='utf-8') as f:
-                    self.config = json.load(f)
-                logger.info("Configuración cargada exitosamente")
+                    loaded_config = json.load(f)
+                
+                # Merge con configuración por defecto
+                self.config = self._merge_configs(self.default_config, loaded_config)
+                logger.info("✅ Configuración cargada exitosamente")
             else:
                 self.config = self.default_config
                 self.save_config()
-                logger.info("Configuración por defecto creada")
+                logger.info("📁 Configuración por defecto creada")
+                
         except Exception as e:
-            logger.error(f"Error cargando configuración: {e}")
+            logger.error(f"❌ Error cargando configuración: {e}")
             self.config = self.default_config
+    
+    def _merge_configs(self, default, loaded):
+        """Fusión segura de configuraciones"""
+        result = default.copy()
+        
+        for key, value in loaded.items():
+            if isinstance(value, dict) and key in result:
+                result[key] = self._merge_configs(result[key], value)
+            else:
+                result[key] = value
+                
+        return result
     
     def save_config(self):
         """Guarda la configuración en archivo"""
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=4, ensure_ascii=False)
-            logger.info("Configuración guardada exitosamente")
+            logger.info("✅ Configuración guardada exitosamente")
         except Exception as e:
-            logger.error(f"Error guardando configuración: {e}")
+            logger.error(f"❌ Error guardando configuración: {e}")
     
     def get(self, key, default=None):
         """Obtiene un valor de configuración"""
@@ -88,9 +105,3 @@ class ConfigManager:
         
         config[keys[-1]] = value
         self.save_config()
-    
-    def reset_to_defaults(self):
-        """Restablece la configuración a valores por defecto"""
-        self.config = self.default_config
-        self.save_config()
-        logger.info("Configuración restablecida a valores por defecto")
