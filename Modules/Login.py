@@ -227,27 +227,95 @@ class Login:
             self.usuario.focus_set()
 
     def _transicion_a_menu_principal(self, usuario: str, rol: str):
+        """Transición mejorada al menú principal - CORREGIDA"""
+    try:
+        # Limpiar recursos de forma segura
+        if hasattr(self, 'fondo_manager'):
+            self.fondo_manager.limpiar()
+        
+        if hasattr(self, 'canvas_confeti'):
+            try: 
+                self.canvas_confeti.destroy()
+            except: 
+                pass
+        
+        # Ocultar ventana actual de forma segura
+        self.root.withdraw()
+        
+        # Importar aquí para evitar import circular
+        from modules.main_menu import MainMenu
+        
+        # Crear NUEVA instancia de Tk para el menú principal
+        root_menu = Tk()
+        root_menu.title("Instituto Rubén Darío - Menú Principal")
+        
+        # Centrar nueva ventana
+        screen_width = root_menu.winfo_screenwidth()
+        screen_height = root_menu.winfo_screenheight()
+        window_width = 1000
+        window_height = 600
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        root_menu.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        
+        # Configurar el menú principal
+        app_menu = MainMenu(root_menu, usuario, rol)
+        
+        def on_closing_menu():
+            """Manejo mejorado del cierre del menú"""
+            try:
+                logger = logging.getLogger(__name__)
+                logger.info("🔒 Cerrando sesión...")
+                
+                # Limpiar recursos del menú
+                if hasattr(app_menu, 'fondo_manager'):
+                    app_menu.fondo_manager.limpiar()
+                
+                # Cerrar todas las ventanas hijas primero
+                from ui.window_manager import GestorVentanas
+                GestorVentanas.cerrar_todas()
+                
+                # Destruir ventana del menú
+                root_menu.destroy()
+                
+                # Mostrar ventana de login nuevamente
+                self.root.deiconify()
+                self.limpiar_campos_login()
+                
+            except Exception as e:
+                logger.error(f"Error cerrando menú: {e}")
+                # Forzar cierre completo
+                self.root.destroy()
+                root_menu.destroy()
+                sys.exit(0)
+        
+        root_menu.protocol("WM_DELETE_WINDOW", on_closing_menu)
+        
+        # Iniciar el menú principal
         try:
-            if hasattr(self, 'fondo_manager'):
-                self.fondo_manager.limpiar()
-            if hasattr(self, 'canvas_confeti'):
-                try: 
-                    self.canvas_confeti.destroy()
-                except: 
-                    pass
+            root_menu.mainloop()
+        except Exception as e:
+            logger.error(f"Error en mainloop del menú: {e}")
+            # Restaurar ventana de login en caso de error
+            self.root.deiconify()
             
-            self.root.withdraw()
-            
-            # Importar aquí para evitar import circular
-            from modules.main_menu import MainMenu
-            
-            root_menu = Tk()
-            # Centrar nueva ventana
-            x = (root_menu.winfo_screenwidth() // 2) - (1000 // 2)
-            y = (root_menu.winfo_screenheight() // 2) - (600 // 2)
-            root_menu.geometry(f"1000x600+{x}+{y}")
-            
-            app_menu = MainMenu(root_menu, usuario, rol)
+    except Exception as e:
+        logger.error(f"❌ Error en transición: {e}")
+        # Restaurar ventana de login en caso de error
+        try:
+            self.root.deiconify()
+        except:
+            pass
+        messagebox.showerror("Error", f"No se pudo cargar el menú principal: {e}")
+
+        def limpiar_campos_login(self):
+            """Limpiar campos del login para reutilización"""
+            self.usuario.delete(0, tk.END)
+            self.clave.delete(0, tk.END)
+            self.show_pw = False
+            self.clave.config(show="•")
+            self.btn_toggle.config(text="👁️")
+            self.usuario.focus_set()
             
             def on_closing_menu():
                 try:
