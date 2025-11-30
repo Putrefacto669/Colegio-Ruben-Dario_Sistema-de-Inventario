@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Sistema de Gestión Académica - Instituto Rubén Darío
-Punto de entrada principal
+Punto de entrada principal - CORREGIDO
 """
 
 import sys
@@ -13,7 +13,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config.database import crear_db_y_schema
 from config.config_manager import ConfigManager
-from ui.theme_manager import FondoManager, CreadorGifsEjemplo
 from modules.login import Login
 from tkinter import Tk, messagebox
 
@@ -30,7 +29,7 @@ def setup_logging():
     return logging.getLogger(__name__)
 
 def main():
-    """Función principal de la aplicación"""
+    """Función principal de la aplicación - CORREGIDA"""
     try:
         logger = setup_logging()
         logger.info("🚀 Iniciando Sistema de Gestión Académica")
@@ -41,36 +40,45 @@ def main():
         # Inicializar configuración
         config_manager = ConfigManager()
         
-        # Crear GIFs de ejemplo si no existen
-        try:
-            from PIL import Image, ImageSequence
-            CreadorGifsEjemplo.crear_gifs_ejemplo()
-            logger.info("✅ GIFs de ejemplo creados/verificados")
-        except ImportError:
-            logger.warning("⚠️ PIL no disponible - Los GIFs no funcionarán")
-        
         # Mostrar información del sistema
         logger.info(f"📋 Sistema: {config_manager.get('instituto.nombre')}")
         logger.info(f"🎯 Versión: {config_manager.get('system.version', '2.0.0')}")
         
-        # Iniciar aplicación
+        # Iniciar aplicación PRINCIPAL
         root = Tk()
         app = Login(root)
         
-        # Configurar cierre seguro
+        # Configurar cierre seguro MEJORADO
         def on_closing():
             try:
+                logger.info("👋 Cerrando aplicación...")
+                # Limpiar recursos de forma segura
                 if hasattr(app, 'fondo_manager'):
                     app.fondo_manager.limpiar()
+                # Forzar destrucción de todos los elementos
+                try:
+                    for widget in root.winfo_children():
+                        try:
+                            widget.destroy()
+                        except:
+                            pass
+                except:
+                    pass
                 root.destroy()
             except Exception as e:
                 logger.error(f"Error en cierre: {e}")
             finally:
-                logger.info("👋 Sistema cerrado")
+                logger.info("✅ Aplicación cerrada correctamente")
                 sys.exit(0)
         
         root.protocol("WM_DELETE_WINDOW", on_closing)
-        root.mainloop()
+        
+        # Iniciar loop principal MEJORADO
+        try:
+            root.mainloop()
+        except Exception as e:
+            logger.error(f"Error en mainloop: {e}")
+            messagebox.showerror("Error", f"Error crítico: {e}")
         
     except Exception as e:
         logger.critical(f"❌ Error fatal iniciando sistema: {e}")
