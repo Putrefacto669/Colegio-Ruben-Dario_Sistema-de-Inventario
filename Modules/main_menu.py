@@ -181,6 +181,26 @@ class MainMenu:
             self.notificaciones.mostrar_notificaciones(self.root)
 
     def salir_sistema(self):
-        """Cierra el sistema de manera segura"""
+         """Cierra el sistema de manera segura - CORREGIDO"""
+    try:
+        # Registrar en auditoría
         self.auditoria.registrar_evento(self.usuario, "LOGOUT", "Cierre de sesión")
+        
+        # Cerrar todas las ventanas hijas primero
+        from ui.window_manager import GestorVentanas
+        GestorVentanas.cerrar_todas()
+        
+        # Limpiar recursos del fondo
+        if hasattr(self, 'fondo_manager'):
+            self.fondo_manager.limpiar()
+        
+        # Destruir ventana actual
         self.root.destroy()
+        
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Error al salir: {e}")
+        # Forzar cierre
+        try:
+            self.root.destroy()
+        except:
+            pass
